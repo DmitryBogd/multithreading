@@ -16,7 +16,11 @@ class  Worker{
     private List<Integer> list1 = new ArrayList<>();
     private List<Integer> list2 = new ArrayList<>();
 
-    public synchronized void addToList1(){
+    Object lock1 = new Object();
+    Object lock2 = new Object();
+
+    public void addToList1(){
+        synchronized (lock1) {
 
             try {
                 Thread.sleep(1);
@@ -25,10 +29,11 @@ class  Worker{
             }
 
             list1.add(random.nextInt(100));
-
+        }
     }
 
-    public synchronized void addToList2(){
+    public void addToList2(){
+        synchronized (lock2) {
 
             try {
                 Thread.sleep(1);
@@ -37,7 +42,7 @@ class  Worker{
             }
 
             list2.add(random.nextInt(100));
-
+        }
     }
 
     public void work(){
