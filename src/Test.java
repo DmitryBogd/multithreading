@@ -2,40 +2,66 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ArrayBlockingQueue;
+
 
 public class Test {
+    private static BlockingQueue<Integer> queue = new ArrayBlockingQueue<Integer>(10);
     public static void main(String[] args) throws InterruptedException {
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        Thread thread1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    produce();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        Thread thread2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    consumer();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
 
-        for(int i = 0;i<5; i++){
-            executorService.submit(new Work(i));
+        thread1.start();
+        thread2.start();
+
+        thread1.join();
+        thread2.join();
+
+    }
+    private static void produce() throws InterruptedException {
+        Random random = new Random();
+
+        while (true){
+            queue.put(random.nextInt(100));
         }
-        executorService.shutdown();
-        System.out.println("All tasks submited");
+    }
 
-        executorService.awaitTermination(1, TimeUnit.DAYS);
+    private  static void consumer() throws InterruptedException {
+        Random random = new Random();
+        while (true) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if(random.nextInt(10)==5) {
+                System.out.println(queue.take());
+                System.out.println("queue size is: " + queue.size());
+            }
+        }
     }
 }
-class Work implements Runnable{
-    public int id;
 
-    public Work(int id){
-        this.id = id;
-    }
-
-    @Override
-    public void run(){
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println("Work " + id + " was complete");
-    }
-}
 
 
 
