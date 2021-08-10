@@ -1,30 +1,26 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import java.util.Scanner;
-import java.util.concurrent.*;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ArrayBlockingQueue;
-
 
 public class Test {
-    private static BlockingQueue<Integer> queue = new ArrayBlockingQueue<Integer>(10);
     public static void main(String[] args) throws InterruptedException {
+        WaitAndNotify wn = new WaitAndNotify();
+
+
         Thread thread1 = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    produce();
+                    wn.produce();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         });
+
         Thread thread2 = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    consumer();
+                    wn.consume();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -38,27 +34,29 @@ public class Test {
         thread2.join();
 
     }
-    private static void produce() throws InterruptedException {
-        Random random = new Random();
-
-        while (true){
-            queue.put(random.nextInt(100));
+}
+class WaitAndNotify{
+    public void produce() throws InterruptedException {
+        synchronized (this){
+            System.out.println("Producer thread started....");
+            wait(); // 1- отдаем лок и ждем пока будет вызван notify()
+            System.out.println("Produce thread resume.....");
         }
+
     }
 
-    private  static void consumer() throws InterruptedException {
-        Random random = new Random();
-        while (true) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if(random.nextInt(10)==5) {
-                System.out.println(queue.take());
-                System.out.println("queue size is: " + queue.size());
-            }
+    public void consume() throws InterruptedException{
+        Thread.sleep(2000);
+        Scanner scanner = new Scanner(System.in);
+
+        synchronized (this){
+            System.out.println("Waiting for return key pressed");
+            scanner.nextLine();
+            notify();
+
+            Thread.sleep(5000);
         }
+
     }
 }
 
