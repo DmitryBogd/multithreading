@@ -2,51 +2,63 @@ import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Test {
     public static void main(String[] args) throws InterruptedException {
-        CountDownLatch countDownLatch = new CountDownLatch(3);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        Task task = new Task();
 
-        for (int i = 0; i<3;i++)
-            executorService.submit(new Processor(i, countDownLatch));
+            Thread thread1 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    task.firstThread();
+                }
+            });
 
-        executorService.shutdown();
+        Thread thread2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                task.secondThread();
+            }
+        });
 
-        for(int i=0;i<3;i++){
-            Thread.sleep(1000);
-            countDownLatch.countDown();
-        }
+        thread1.start();
+        thread2.start();
+
+        thread1.join();
+        thread2.join();
+
+        task.showCounter();
     }
 }
 
-class Processor implements Runnable {
-    private int id;
-    private CountDownLatch countDownLatch;
+class Task{
+    private int counter;
+    private Lock lock = new ReentrantLock();
 
-    public Processor(int id, CountDownLatch countDownLatch) {
-        this.countDownLatch = countDownLatch;
-        this.id = id;
+    private void increment(){
+        for(int i=0;i<10000;i++)
+            counter++;
+
     }
 
+    public void firstThread(){
+        lock.lock();
+        increment();
+        lock.unlock();
+    }
 
-    @Override
-    public void run(){
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    public void secondThread(){
+        lock.lock();
+        increment();
+        lock.unlock();
+    }
 
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println("Thread with id "+ id + "proceeded" );
+    public void showCounter(){
+        System.out.println(counter);
     }
 }
-
 
 
