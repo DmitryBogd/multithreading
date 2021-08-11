@@ -1,65 +1,52 @@
 import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Test {
     public static void main(String[] args) throws InterruptedException {
-        WaitAndNotify wn = new WaitAndNotify();
+        CountDownLatch countDownLatch = new CountDownLatch(3);
 
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
 
-        Thread thread1 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    wn.produce();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        for (int i = 0; i<3;i++)
+            executorService.submit(new Processor(i, countDownLatch));
 
-        Thread thread2 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    wn.consume();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        executorService.shutdown();
 
-        thread1.start();
-        thread2.start();
-
-        thread1.join();
-        thread2.join();
-
-    }
-}
-class WaitAndNotify{
-    public void produce() throws InterruptedException {
-        synchronized (this){
-            System.out.println("Producer thread started....");
-            wait(); // 1- отдаем лок и ждем пока будет вызван notify()
-            System.out.println("Produce thread resume.....");
+        for(int i=0;i<3;i++){
+            Thread.sleep(1000);
+            countDownLatch.countDown();
         }
-
-    }
-
-    public void consume() throws InterruptedException{
-        Thread.sleep(2000);
-        Scanner scanner = new Scanner(System.in);
-
-        synchronized (this){
-            System.out.println("Waiting for return key pressed");
-            scanner.nextLine();
-            notify();
-
-            Thread.sleep(5000);
-        }
-
     }
 }
 
+class Processor implements Runnable {
+    private int id;
+    private CountDownLatch countDownLatch;
+
+    public Processor(int id, CountDownLatch countDownLatch) {
+        this.countDownLatch = countDownLatch;
+        this.id = id;
+    }
+
+
+    @Override
+    public void run(){
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Thread with id "+ id + "proceeded" );
+    }
+}
 
 
 
